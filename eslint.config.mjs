@@ -7,6 +7,6 @@ const compat = new FlatCompat({ baseDirectory: __dirname });
 
 export default [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
-  { ignores: [".next/**", "node_modules/**", "public/sw.js", "supabase/functions/**"] },
+  { ignores: [".next/**", "node_modules/**", "public/sw.js", "next-env.d.ts"] },
   { rules: { "@typescript-eslint/no-explicit-any": "error" } },
 ];

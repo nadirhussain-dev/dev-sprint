@@ -8,7 +8,7 @@ export default function OfflinePage() {
       <WifiOff className="h-6 w-6 text-muted-foreground" />
       <h1 className="text-lg font-semibold">You&apos;re offline</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        Pages you&apos;ve already opened still work, and task changes you make are queued and synced when you reconnect.
+        Your data is never stored in the offline cache. If DevSprint is already open in a tab, task check-offs made there are queued and synced when you reconnect.
       </p>
       <a href="/dashboard" className="text-sm underline">Try again</a>
     </main>

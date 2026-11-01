@@ -20,7 +20,11 @@ export async function reviewItem(id: string, outcome: RevisionOutcome): Promise<
   // Mastered items clear their "needs revision" flag at the source.
   if (next.resolved) {
     if (item.source_type === "question") await ctx.supabase.from("user_question_progress").update({ status: "learned" }).eq("question_id", item.source_id);
-    if (item.source_type === "task") await ctx.supabase.from("user_task_progress").update({ status: "completed" }).eq("task_id", item.source_id).eq("status", "needs_revision");
+    if (item.source_type === "task") {
+      const { data: row } = await ctx.supabase.from("user_task_progress").update({ status: "completed" })
+        .eq("task_id", item.source_id).eq("status", "needs_revision").select("day_number").maybeSingle();
+      if (row) await Promise.all([ctx.supabase.rpc("refresh_day_progress", { p_day: row.day_number }), ctx.supabase.rpc("refresh_today")]);
+    }
   }
   revalidatePath("/revision");
   revalidatePath("/dashboard");

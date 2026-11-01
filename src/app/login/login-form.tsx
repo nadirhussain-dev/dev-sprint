@@ -14,7 +14,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
       <div className="flex flex-col items-center gap-2 text-center animate-fade-up">
         <MailCheck className="h-6 w-6" />
         <p className="text-sm font-medium">Check {state.email}</p>
-        <p className="text-xs text-muted-foreground">Open the sign-in link on this device. You'll stay signed in afterwards.</p>
+        <p className="text-xs text-muted-foreground">Open the sign-in link on this device. You&apos;ll stay signed in afterwards.</p>
       </div>
     );
   }
