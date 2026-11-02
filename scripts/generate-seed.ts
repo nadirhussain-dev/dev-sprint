@@ -1,5 +1,5 @@
 /**
- * Generates supabase/migrations/20261101000003_content.sql from /content.
+ * Generates supabase/migrations/003_content.sql from /content.
  * IDs are deterministic (md5-derived), and every insert is an upsert, so re-running
  * the migration updates content without deleting user progress.
  *
@@ -101,6 +101,6 @@ milestones.forEach((m, i) => {
 });
 
 out.push("commit;", "");
-const target = join(__dirname, "..", "supabase", "migrations", "20261101000003_content.sql");
+const target = join(__dirname, "..", "supabase", "migrations", "003_content.sql");
 writeFileSync(target, out.join("\n"));
 console.log(`Wrote ${target}: 60 days, ${questions.length} questions, ${challenges.length} challenges, ${designs.length} designs, ${milestones.length} milestones`);
