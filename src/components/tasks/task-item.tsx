@@ -18,6 +18,8 @@ const statusBadge: Record<TaskStatus, { label: string; variant: "outline" | "def
   needs_revision: { label: "Needs revision", variant: "warning" },
 };
 
+const CHEERS = ["Nice! One more down 💪", "Boom! Keep the momentum ⚡", "Great work — next one! 🚀", "You are on fire 🔥", "Progress unlocked ✨"];
+
 export function TaskItem({ task, status: initialStatus, version, streak, onOpenDetails, compact = false }: {
   task: CurriculumTask;
   status: TaskStatus;
@@ -51,7 +53,9 @@ export function TaskItem({ task, status: initialStatus, version, streak, onOpenD
           const nextStreak = (streak ?? 0) + 1;
           toast.success(streakMilestone(nextStreak) ?? `Streak day earned — ${nextStreak} in a row`, { icon: "🔥" });
         } else if (res.data.dayComplete && next === "completed") {
-          toast.success("All required tasks for this day are done");
+          toast.success("Day crushed! All required tasks are done", { icon: "🏆" });
+        } else if (next === "completed") {
+          toast.success(CHEERS[Math.floor(Math.random() * CHEERS.length)]!, { duration: 1800 });
         }
         if (next === "needs_revision") toast("Added to your revision queue — it'll come back tomorrow");
       } catch {
@@ -70,8 +74,8 @@ export function TaskItem({ task, status: initialStatus, version, streak, onOpenD
         aria-label={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
         onClick={() => change(done ? "not_started" : "completed")}
         className={cn(
-          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          done ? "border-primary bg-primary text-primary-foreground" : "border-input hover:border-foreground/40",
+          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          done ? "bg-energy border-transparent text-energy-fg shadow-energy" : "border-input hover:border-primary hover:bg-primary/10",
           pop && "animate-pop",
         )}
       >

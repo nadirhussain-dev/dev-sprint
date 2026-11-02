@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/data/context";
 import { rows } from "@/lib/supabase/result";
+import { PLAN_LENGTH } from "@/lib/domain/dates";
 import { Simulator } from "@/components/simulator/simulator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Interview simulator" };
 
 export default async function SimulatorPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   const { day } = await searchParams;
-  const focusDay = day && /^\d+$/.test(day) && Number(day) >= 1 && Number(day) <= 60 ? Number(day) : null;
+  const focusDay = day && /^\d+$/.test(day) && Number(day) >= 1 && Number(day) <= PLAN_LENGTH ? Number(day) : null;
   const ctx = await getAppContext();
   const [questions, completed, attempts, mockDays] = await Promise.all([
     ctx.supabase.from("interview_questions").select("*").then(rows<InterviewQuestion>),

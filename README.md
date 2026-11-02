@@ -44,7 +44,7 @@ A 60-day Mid → Senior Full-Stack Engineer interview preparation tracker. It te
 1. Create a project at [supabase.com](https://supabase.com).
 2. Apply the migrations in order (`supabase/migrations/*.sql`):
    - **CLI:** `supabase link --project-ref <ref>` then `supabase db push`, **or**
-   - **SQL editor:** paste and run each file in order (`001_schema`, `002_logic_and_rls`, `003_content`).
+   - **SQL editor:** paste and run each file in order (`001_schema`, `002_logic_and_rls`, `003_content`, `004_extend_plan_to_90_days`, `005_ai_course_content`).
 3. **Auth → Providers → Email:** keep enabled. (Instant mode doesn't send emails; magic-link mode does.)
 4. **Auth → URL configuration:** set Site URL to your app URL and add `<your-url>/auth/confirm` to redirect URLs.
 
@@ -101,7 +101,7 @@ npm run typecheck     # tsc --noEmit (strict)
 npm run lint          # eslint
 npm test              # vitest: domain logic + all migrations executed on PGlite (real Postgres in WASM)
 npm run build
-npm run seed:generate # regenerate supabase/migrations/003_content.sql from /content
+npm run seed:generate # regenerate 003_content.sql and 005_ai_course_content.sql from /content
 ```
 
 The SQL tests run every migration on an in-process Postgres and verify: 60 days × 240 minutes, RLS isolation between users, users can't forge streak rows or timer logs, overlapping timers are rejected, the 5-hour cap, and that a day completes only when every required task is done.

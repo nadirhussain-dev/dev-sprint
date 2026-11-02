@@ -1,4 +1,4 @@
-/* DevSprint 60 service worker.
+/* DevSprint service worker.
  * Caches ONLY static, non-user assets (build output, icons, offline page).
  * Authenticated HTML, server actions and Supabase API responses are never cached. */
 const VERSION = "v1";
@@ -46,7 +46,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "DevSprint 60", body: "", url: "/dashboard", tag: "devsprint" };
+  let data = { title: "DevSprint", body: "", url: "/dashboard", tag: "devsprint" };
   try { data = { ...data, ...event.data.json() }; } catch (_) { /* plain text payload */ }
   event.waitUntil(
     self.registration.showNotification(data.title, {

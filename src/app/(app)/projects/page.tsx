@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/data/context";
 import { rows } from "@/lib/supabase/result";
-import { addDays, formatShortDate } from "@/lib/domain/dates";
+import { addDays, formatShortDate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { MilestoneCard } from "@/components/projects/milestone-card";
 import { Progress } from "@/components/ui/progress";
 import type { Evidence, Milestone, MilestoneProgress } from "@/lib/types";
@@ -46,7 +46,7 @@ export default async function ProjectsPage() {
               milestone={m}
               progress={pr}
               evidence={evidence.filter((e) => e.milestone_id === m.id)}
-              targetDate={formatShortDate(addDays(ctx.plan.start_date, (m.target_day ?? 60) - 1))}
+              targetDate={formatShortDate(addDays(ctx.plan.start_date, (m.target_day ?? PLAN_LENGTH) - 1))}
               overdue={(m.target_day ?? 61) < currentDay && pr?.status !== "completed"}
             />
           );

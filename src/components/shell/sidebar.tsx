@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 export function Sidebar({ dayLabel }: { dayLabel: string }) {
   const path = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r bg-background px-3 py-4 md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r bg-background/70 px-3 backdrop-blur py-4 md:flex">
       <Link href="/dashboard" className="mb-1 px-2"><Logo /></Link>
       <p className="mb-5 px-2 font-mono text-[11px] text-muted-foreground">{dayLabel}</p>
       <nav className="flex flex-col gap-5" aria-label="Main">
@@ -24,7 +24,7 @@ export function Sidebar({ dayLabel }: { dayLabel: string }) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-                    active ? "bg-accent font-medium text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -48,7 +48,7 @@ export function MobileNav() {
         const active = path === item.href || path.startsWith(`${item.href}/`);
         return (
           <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined}
-            className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]", active ? "text-foreground" : "text-muted-foreground")}>
+            className={cn("flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]", active ? "font-semibold text-primary" : "text-muted-foreground")}>
             <item.icon className="h-5 w-5" />
             {item.label}
           </Link>

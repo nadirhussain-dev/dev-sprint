@@ -2,7 +2,9 @@
  * Calendar dates are plain "YYYY-MM-DD" strings interpreted in the user's IANA timezone.
  * All arithmetic on them is done in UTC so DST never shifts a date.
  */
-export const PLAN_LENGTH = 60;
+/** Days 1–60: full-stack sprint. Days 61–90: AI Engineering course. */
+export const PLAN_LENGTH = 90;
+export const CORE_LENGTH = 60;
 
 export type ISODate = string;
 
@@ -69,7 +71,7 @@ export type PlanPhase = "not_started" | "active" | "finished";
 
 export interface PlanPosition {
   phase: PlanPhase;
-  /** 1..60 while active; clamped to 1 before start and 60 after the end. */
+  /** 1..PLAN_LENGTH while active; clamped to 1 before start and PLAN_LENGTH after the end. */
   dayNumber: number;
   /** Days until start (positive) when not started. */
   daysUntilStart: number;

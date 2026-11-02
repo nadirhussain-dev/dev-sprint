@@ -1,5 +1,5 @@
 import "server-only";
-import { addDays, diffDays, type ISODate } from "@/lib/domain/dates";
+import { addDays, diffDays, type ISODate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { computeReadiness, readinessAreaFor, AREA_META, type ReadinessArea, type ReadinessResult } from "@/lib/domain/readiness";
 import { rows } from "@/lib/supabase/result";
 import type { AppContext } from "./context";
@@ -174,9 +174,9 @@ function buildWeeklyReports(
 ): WeeklyReport[] {
   const qualified = new Set(streaks.filter((s) => s.qualified).map((s) => s.local_date));
   const out: WeeklyReport[] = [];
-  for (let w = 1; w <= 9; w++) {
+  for (let w = 1; w <= Math.ceil(PLAN_LENGTH / 7); w++) {
     const firstDay = (w - 1) * 7 + 1;
-    const lastDay = Math.min(60, w * 7);
+    const lastDay = Math.min(PLAN_LENGTH, w * 7);
     const start = addDays(ctx.plan.start_date, firstDay - 1);
     const end = addDays(ctx.plan.start_date, lastDay - 1);
     const statusW: WeeklyReport["status"] = ctx.today > end ? "complete" : ctx.today >= start ? "in_progress" : "upcoming";

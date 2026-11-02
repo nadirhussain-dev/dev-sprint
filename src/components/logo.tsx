@@ -1,8 +1,12 @@
+import { Zap } from "lucide-react";
+
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="flex items-center gap-2 font-semibold tracking-tight">
-      <span aria-hidden className="grid h-6 w-6 place-items-center rounded-md bg-primary font-mono text-[11px] text-primary-foreground">60</span>
-      {compact ? null : <span className="text-sm">DevSprint 60</span>}
+    <span className="flex items-center gap-2 font-bold tracking-tight">
+      <span aria-hidden className="bg-energy shadow-energy grid h-7 w-7 place-items-center rounded-lg text-energy-fg">
+        <Zap className="h-4 w-4 fill-current" />
+      </span>
+      {compact ? null : <span className="text-energy text-base">DevSprint</span>}
     </span>
   );
 }

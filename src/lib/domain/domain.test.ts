@@ -6,17 +6,18 @@ import { scheduleNext } from "./revision";
 import { scoreAttempt } from "./scoring";
 import { dueReminders, type ReminderPrefs } from "./reminders";
 import { phases, allDays } from "@content/curriculum";
+import { aiPhases } from "@content/ai-engineering";
 import { generateTasks, splitMinutes } from "@content/tasks";
 
 const day = (local_date: string, qualified: boolean): StreakDay => ({ local_date, qualified, study_minutes: qualified ? 130 : 10, tasks_completed: 1 });
 
 describe("dates", () => {
-  it("end date is start + 59 (60 calendar days)", () => {
-    expect(endDate("2026-11-01")).toBe("2026-12-30");
-    expect(diffDays("2026-11-01", endDate("2026-11-01")) + 1).toBe(60);
+  it("end date is start + 89 (90 calendar days)", () => {
+    expect(endDate("2026-11-01")).toBe("2027-01-29");
+    expect(diffDays("2026-11-01", endDate("2026-11-01")) + 1).toBe(90);
   });
   it("handles starting mid-month and crossing year/leap boundaries", () => {
-    expect(endDate("2027-12-15")).toBe("2028-02-12");
+    expect(endDate("2027-12-15")).toBe("2028-03-13");
     expect(addDays("2028-02-28", 1)).toBe("2028-02-29");
   });
   it("DST transitions don't shift dates", () => {
@@ -27,7 +28,9 @@ describe("dates", () => {
     expect(planPosition("2026-11-10", "2026-11-01")).toMatchObject({ phase: "not_started", daysUntilStart: 9 });
     expect(planPosition("2026-11-01", "2026-11-12")).toMatchObject({ phase: "active", dayNumber: 12 });
     expect(planPosition("2026-11-01", "2026-12-30")).toMatchObject({ phase: "active", dayNumber: 60 });
-    expect(planPosition("2026-11-01", "2026-12-31")).toMatchObject({ phase: "finished", dayNumber: 60 });
+    expect(planPosition("2026-11-01", "2026-12-31")).toMatchObject({ phase: "active", dayNumber: 61 });
+    expect(planPosition("2026-11-01", "2027-01-29")).toMatchObject({ phase: "active", dayNumber: 90 });
+    expect(planPosition("2026-11-01", "2027-01-30")).toMatchObject({ phase: "finished", dayNumber: 90 });
   });
   it("today depends on timezone (after-midnight case)", () => {
     const instant = new Date("2026-11-02T07:30:00Z"); // 23:30 Nov 1 in LA, 12:30 Nov 2 in Karachi
@@ -128,8 +131,12 @@ describe("curriculum", () => {
     expect(phases).toHaveLength(9);
     expect(allDays.map((d) => d.day)).toEqual(Array.from({ length: 60 }, (_, i) => i + 1));
   });
+  it("AI Engineering continues with days 61–90 across 4 phases", () => {
+    expect(aiPhases.map((p) => p.number)).toEqual([10, 11, 12, 13]);
+    expect(aiPhases.flatMap((p) => p.days.map((d) => d.day))).toEqual(Array.from({ length: 30 }, (_, i) => i + 61));
+  });
   it("every day totals 240 minutes: 120 morning + 120 evening", () => {
-    for (const d of allDays) {
+    for (const d of [...allDays, ...aiPhases.flatMap((p) => p.days)]) {
       const t = generateTasks(d);
       expect(t.filter((x) => x.session === "morning").reduce((s, x) => s + x.minutes, 0)).toBe(120);
       expect(t.filter((x) => x.session === "evening").reduce((s, x) => s + x.minutes, 0)).toBe(120);

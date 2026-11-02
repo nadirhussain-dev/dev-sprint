@@ -30,17 +30,17 @@ beforeAll(async () => {
 }, 60_000);
 
 describe("content", () => {
-  it("seeds 60 days, each 240 minutes", async () => {
+  it("seeds 90 days (60 full-stack + 30 AI Engineering), each 240 minutes", async () => {
     const r = await db.query<{ n: number; bad: number }>(`
       select count(*)::int as n,
              count(*) filter (where total <> 240)::int as bad
       from (select day_number, sum(estimated_minutes) total from public.curriculum_tasks group by day_number) t`);
-    expect(r.rows[0]).toEqual({ n: 60, bad: 0 });
+    expect(r.rows[0]).toEqual({ n: 90, bad: 0 });
   });
-  it("end date is generated as start + 59", async () => {
+  it("end date is generated as start + 89", async () => {
     await as(A, () => db.query(`insert into public.learning_plans (user_id, start_date) values ($1, (now() at time zone 'Asia/Karachi')::date)`, [A]));
     const r = await db.query<{ d: number }>(`select (end_date - start_date)::int d from public.learning_plans where user_id = $1`, [A]);
-    expect(r.rows[0]?.d).toBe(59);
+    expect(r.rows[0]?.d).toBe(89);
   });
 });
 

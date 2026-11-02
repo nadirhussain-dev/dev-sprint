@@ -4,7 +4,7 @@ import { Flame, Mic } from "lucide-react";
 import { getAppContext } from "@/lib/data/context";
 import { getAllDayCompletion, getStreaks } from "@/lib/data/progress";
 import { rows } from "@/lib/supabase/result";
-import { addDays, diffDays, type ISODate } from "@/lib/domain/dates";
+import { addDays, diffDays, type ISODate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatMinutes } from "@/lib/utils";
 
@@ -56,7 +56,7 @@ export default async function CalendarPage() {
                   {cells.map((date, i) => {
                     if (!date) return <div key={`e${i}`} />;
                     const planDay = diffDays(ctx.plan.start_date, date) + 1;
-                    const inPlan = planDay >= 1 && planDay <= 60;
+                    const inPlan = planDay >= 1 && planDay <= PLAN_LENGTH;
                     const c = inPlan ? completion.get(planDay) : undefined;
                     const complete = c && c.requiredTotal > 0 && c.requiredDone === c.requiredTotal;
                     const s = byDate.get(date);
@@ -68,7 +68,7 @@ export default async function CalendarPage() {
                         !inPlan && "border-transparent text-muted-foreground/40",
                         complete && "border-primary bg-primary text-primary-foreground",
                         inPlan && !complete && missed.has(date) && "border-danger/40 bg-danger/5",
-                        isToday && "ring-2 ring-foreground ring-offset-1 ring-offset-background",
+                        isToday && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                       )}
                         title={inPlan ? `Day ${planDay}: ${info?.title ?? ""}${s ? ` · ${formatMinutes(s.study_minutes)}` : ""}` : undefined}>
                         <span className="font-medium">{Number(date.slice(8))}</span>

@@ -6,7 +6,7 @@ export default function SetupPage() {
   return (
     <main className="mx-auto max-w-xl px-5 py-16">
       <Logo />
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight">Finish setting up DevSprint 60</h1>
+      <h1 className="mt-8 text-2xl font-semibold tracking-tight">Finish setting up DevSprint</h1>
       {configured ? (
         <p className="mt-3 text-sm text-muted-foreground">Supabase is configured. <a className="underline" href="/login">Continue to sign in</a>.</p>
       ) : (

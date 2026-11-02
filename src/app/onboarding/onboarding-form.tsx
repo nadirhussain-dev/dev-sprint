@@ -96,7 +96,7 @@ export function OnboardingForm({ defaultName, existingStart }: { defaultName: st
             <Input id="start_date" type="date" disabled={Boolean(existingStart)} {...register("start_date")} />
           </Field>
           <div className="flex flex-col justify-end rounded-md border bg-muted px-3 py-2 text-xs">
-            <span className="text-muted-foreground">Your 60-day sprint ends</span>
+            <span className="text-muted-foreground">Your 90-day plan ends</span>
             <span className="font-medium">{end ? formatLongDate(end) : "—"}</span>
           </div>
           <Field label="Timezone" htmlFor="timezone" error={errors.timezone?.message}>

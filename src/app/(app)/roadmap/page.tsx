@@ -4,7 +4,7 @@ import { Check, Mic, RotateCcw } from "lucide-react";
 import { getAppContext } from "@/lib/data/context";
 import { getAllDayCompletion } from "@/lib/data/progress";
 import { rows } from "@/lib/supabase/result";
-import { addDays, formatShortDate } from "@/lib/domain/dates";
+import { addDays, formatShortDate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,13 +20,13 @@ export default async function RoadmapPage() {
   ]);
   const phases = new Map<number, CurriculumDay[]>();
   for (const d of days) phases.set(d.phase_number, [...(phases.get(d.phase_number) ?? []), d]);
-  const today = ctx.position.phase === "active" ? ctx.position.dayNumber : ctx.position.phase === "finished" ? 61 : 0;
+  const today = ctx.position.phase === "active" ? ctx.position.dayNumber : ctx.position.phase === "finished" ? PLAN_LENGTH + 1 : 0;
 
   return (
     <div className="flex flex-col gap-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">60-day roadmap</h1>
-        <p className="text-sm text-muted-foreground">{formatShortDate(ctx.plan.start_date)} → {formatShortDate(ctx.plan.end_date)} · nine phases, 240 minutes a day.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{PLAN_LENGTH}-day roadmap</h1>
+        <p className="text-sm text-muted-foreground">{formatShortDate(ctx.plan.start_date)} → {formatShortDate(ctx.plan.end_date)} · full-stack sprint, then AI Engineering · 240 minutes a day.</p>
       </header>
       {[...phases.entries()].map(([num, list]) => {
         const req = list.reduce((s, d) => s + (completion.get(d.day_number)?.requiredTotal ?? 0), 0);
@@ -50,7 +50,7 @@ export default async function RoadmapPage() {
                 const p = c.requiredTotal ? Math.round((c.requiredDone / c.requiredTotal) * 100) : 0;
                 return (
                   <Link key={d.id} href={`/roadmap/day/${d.day_number}`}
-                    className={cn("group flex flex-col gap-2 rounded-lg border bg-card p-3.5 transition-colors hover:border-foreground/30", isToday && "border-foreground ring-1 ring-foreground")}>
+                    className={cn("group flex flex-col gap-2 rounded-lg border bg-card p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md", isToday && "border-primary ring-2 ring-primary/40")}>
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-[11px] text-muted-foreground">DAY {d.day_number} · {formatShortDate(addDays(ctx.plan.start_date, d.day_number - 1))}</span>
                       {complete ? <Check className="h-4 w-4 text-success" aria-label="Completed" /> : isToday ? <Badge variant="solid">Today</Badge> : past && p < 100 ? <Badge variant={c.anyActivity ? "outline" : "danger"}>{c.anyActivity ? `${p}%` : "Missed"}</Badge> : null}

@@ -38,7 +38,7 @@ export function ChallengeCard({ challenge: c, progress }: { challenge: CodingCha
   return (
     <div id={c.id} className={cn("rounded-lg border bg-card", status === "completed" && "border-success/30")}>
       <button className="flex w-full items-center gap-3 px-4 py-3 text-left" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className={cn("h-2 w-2 shrink-0 rounded-full", status === "completed" ? "bg-success" : status === "needs_revision" ? "bg-warning" : status === "in_progress" ? "bg-foreground" : "bg-border")} />
+        <span className={cn("h-2 w-2 shrink-0 rounded-full", status === "completed" ? "bg-success" : status === "needs_revision" ? "bg-warning" : status === "in_progress" ? "bg-primary" : "bg-border")} />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">{c.title}</span>
           <span className="text-xs text-muted-foreground">{c.category}</span>

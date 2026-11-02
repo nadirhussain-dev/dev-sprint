@@ -2,10 +2,13 @@ import Link from "next/link";
 import { ArrowRight, CalendarCheck, Flame, Gauge, ListChecks, Mic, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { phases } from "@content/curriculum";
+import { phases as corePhases } from "@content/curriculum";
+import { aiPhases } from "@content/ai-engineering";
+
+const phases = [...corePhases, ...aiPhases];
 
 const features = [
-  { icon: ListChecks, title: "60 days, fully planned", body: "Morning theory and evening practice for every day — 240 minutes, broken into real tasks." },
+  { icon: ListChecks, title: "90 days, fully planned", body: "60 days of full-stack, then 30 days of AI Engineering. Morning theory, evening practice, 240 minutes a day." },
   { icon: Flame, title: "Honest streaks", body: "Evaluated in your timezone from server-side records. No back-filled streaks, no fake progress." },
   { icon: Mic, title: "Interview simulator", body: "Random questions from topics you've finished. Answer, then score yourself against a rubric." },
   { icon: Gauge, title: "Evidence-based readiness", body: "Checking tasks builds coverage. Only assessments, solved challenges and project evidence build readiness." },
@@ -22,12 +25,12 @@ export default function Landing() {
       </header>
 
       <section className="py-16 sm:py-24">
-        <p className="mb-4 font-mono text-xs text-muted-foreground">MID → SENIOR FULL-STACK · 60 DAYS · 4 HOURS/DAY</p>
-        <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-          Show up for 60 days. Walk into the interview ready.
+        <p className="mb-4 font-mono text-xs text-muted-foreground">FULL-STACK → AI ENGINEERING · 90 DAYS · 4 HOURS/DAY</p>
+        <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
+          Show up every day. <span className="text-energy">Level up for real.</span>
         </h1>
         <p className="mt-5 max-w-xl text-base text-muted-foreground">
-          DevSprint 60 tells you exactly what to study today, tracks every hour, and measures readiness by what you can
+          DevSprint tells you exactly what to study today, tracks every hour, and measures readiness by what you can
           demonstrate — not by how many boxes you ticked.
         </p>
         <div className="mt-8 flex gap-3">
@@ -46,12 +49,12 @@ export default function Landing() {
       </section>
 
       <section className="py-16">
-        <h2 className="mb-4 text-sm font-semibold">The nine phases</h2>
+        <h2 className="mb-4 text-sm font-semibold">The {phases.length} phases</h2>
         <ol className="divide-y rounded-lg border">
           {phases.map((p) => (
             <li key={p.number} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
               <span className="flex items-center gap-3">
-                <span className="font-mono text-xs text-muted-foreground">0{p.number}</span>
+                <span className="font-mono text-xs text-muted-foreground">{String(p.number).padStart(2, "0")}</span>
                 {p.title}
               </span>
               <span className="font-mono text-xs text-muted-foreground">

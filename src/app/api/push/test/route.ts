@@ -13,7 +13,7 @@ export async function POST() {
   const subs = (data ?? []) as PushTarget[];
   let sent = 0;
   for (const s of subs) {
-    const r = await sendPush(s, { title: "DevSprint 60", body: "Push reminders are working.", url: "/dashboard", tag: "test" });
+    const r = await sendPush(s, { title: "DevSprint", body: "Push reminders are working.", url: "/dashboard", tag: "test" });
     if (r === "ok") sent += 1;
     if (r === "gone") await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
   }

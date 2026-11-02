@@ -7,7 +7,7 @@
  */
 export type ReadinessArea =
   | "javascript_typescript" | "react_next" | "backend" | "databases"
-  | "oop_solid" | "dsa" | "system_design" | "project" | "mock";
+  | "oop_solid" | "dsa" | "system_design" | "project" | "mock" | "ai_engineering";
 
 export const AREA_META: Record<ReadinessArea, { label: string; weight: number; evidence: string }> = {
   javascript_typescript: { label: "JavaScript & TypeScript", weight: 15, evidence: "Simulator answers" },
@@ -19,6 +19,7 @@ export const AREA_META: Record<ReadinessArea, { label: string; weight: number; e
   system_design: { label: "System Design", weight: 12, evidence: "Design reviews + simulator" },
   project: { label: "Practical project", weight: 8, evidence: "Milestones with evidence" },
   mock: { label: "Mock interviews", weight: 5, evidence: "Scored mock interviews" },
+  ai_engineering: { label: "AI Engineering", weight: 12, evidence: "Simulator answers" },
 };
 
 export const AREAS = Object.keys(AREA_META) as ReadinessArea[];

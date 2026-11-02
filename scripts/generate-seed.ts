@@ -1,7 +1,10 @@
 /**
- * Generates supabase/migrations/003_content.sql from /content.
+ * Generates the content migrations from /content:
+ *   supabase/migrations/003_content.sql           — days 1–60, questions, challenges, system design, milestones
+ *   supabase/migrations/005_ai_course_content.sql — days 61–90 (AI Engineering), AI questions and milestones
+ * The AI file is separate because days 61–90 need the range checks widened by 004 first.
  * IDs are deterministic (md5-derived), and every insert is an upsert, so re-running
- * the migration updates content without deleting user progress.
+ * the migrations updates content without deleting user progress.
  *
  *   npm run seed:generate
  */
@@ -9,11 +12,14 @@ import { createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { phases } from "../content/curriculum";
+import { aiMilestones, aiPhases } from "../content/ai-engineering";
 import { generateTasks } from "../content/tasks";
 import { questions } from "../content/questions";
+import { aiQuestions } from "../content/ai-questions";
 import { challenges } from "../content/challenges";
 import { designs } from "../content/system-design";
 import { milestones } from "../content/milestones";
+import type { MilestoneSpec, PhaseSpec, QuestionSpec } from "../content/types";
 
 export function stableUuid(seed: string): string {
   const h = createHash("md5").update(`devsprint60:${seed}`).digest("hex");
@@ -29,54 +35,80 @@ const arr = (xs: readonly (string | number)[]): string =>
       : `array[${xs.map((x) => q(String(x))).join(",")}]::text[]`;
 const json = (v: unknown): string => `${q(JSON.stringify(v))}::jsonb`;
 
-const out: string[] = [
+/** Emits days firstDay.. in order; throws on gaps or wrong totals. Returns the last day number. */
+function emitDays(out: string[], list: PhaseSpec[], firstDay: number): number {
+  let dayIndex = firstDay - 1;
+  for (const phase of list) {
+    for (const d of phase.days) {
+      dayIndex += 1;
+      if (d.day !== dayIndex) throw new Error(`Day numbering gap at ${d.day}`);
+      const morningFocus = d.topics.slice(0, 3).join(", ") + (d.topics.length > 3 ? " …" : "");
+      const eveningFocus = d.assignments[0] ?? "Practice and interview questions";
+      out.push(
+        `insert into public.curriculum_days (id, day_number, week_number, phase_number, phase_title, title, skill_area, morning_focus, evening_focus, topics, objectives, interview_questions, coding_assignments, practical_outcomes, is_mock_interview, is_revision) values (` +
+          [q(stableUuid(`day:${d.day}`)), d.day, Math.ceil(d.day / 7), phase.number, q(phase.title), q(d.title), q(d.skill), q(morningFocus), q(eveningFocus),
+            arr(d.topics), arr(d.objectives), arr(d.questions), arr(d.assignments), arr(d.outcomes), d.mock ? "true" : "false", d.revision ? "true" : "false"].join(", ") +
+          `) on conflict (day_number) do update set week_number = excluded.week_number, phase_number = excluded.phase_number, phase_title = excluded.phase_title, title = excluded.title, skill_area = excluded.skill_area, morning_focus = excluded.morning_focus, evening_focus = excluded.evening_focus, topics = excluded.topics, objectives = excluded.objectives, interview_questions = excluded.interview_questions, coding_assignments = excluded.coding_assignments, practical_outcomes = excluded.practical_outcomes, is_mock_interview = excluded.is_mock_interview, is_revision = excluded.is_revision;`,
+      );
+      const tasks = generateTasks(d);
+      const total = tasks.reduce((s, t) => s + t.minutes, 0);
+      if (total !== 240) throw new Error(`Day ${d.day} totals ${total} minutes, expected 240`);
+      for (const t of tasks) {
+        out.push(
+          `insert into public.curriculum_tasks (id, day_id, day_number, session, position, title, description, task_type, estimated_minutes, priority, is_required, skill_area) values (` +
+            [q(stableUuid(`task:${d.day}:${t.session}:${t.position}`)), `(select id from public.curriculum_days where day_number = ${d.day})`, d.day, q(t.session), t.position, q(t.title), q(t.description), q(t.taskType), t.minutes, q(t.priority), t.required ? "true" : "false", q(t.skill)].join(", ") +
+            `) on conflict (id) do update set title = excluded.title, description = excluded.description, task_type = excluded.task_type, estimated_minutes = excluded.estimated_minutes, priority = excluded.priority, is_required = excluded.is_required, skill_area = excluded.skill_area;`,
+        );
+      }
+      // Remove tasks that no longer exist in the generator for this day
+      const keep = tasks.map((t) => q(stableUuid(`task:${d.day}:${t.session}:${t.position}`))).join(",");
+      out.push(`delete from public.curriculum_tasks where day_number = ${d.day} and id not in (${keep});`);
+    }
+  }
+  return dayIndex;
+}
+
+function emitQuestions(out: string[], list: QuestionSpec[]) {
+  for (const x of list) {
+    out.push(
+      `insert into public.interview_questions (id, slug, category, skill_area, difficulty, title, short_answer, explanation, code_example, real_world_example, follow_ups, related_concepts, key_points, day_numbers) values (` +
+        [q(stableUuid(`q:${x.slug}`)), q(x.slug), q(x.category), q(x.skill), q(x.difficulty), q(x.title), q(x.short), q(x.explanation), q(x.code), q(x.realWorld), arr(x.followUps), arr(x.related), arr(x.keyPoints), arr(x.days)].join(", ") +
+        `) on conflict (slug) do update set category = excluded.category, skill_area = excluded.skill_area, difficulty = excluded.difficulty, title = excluded.title, short_answer = excluded.short_answer, explanation = excluded.explanation, code_example = excluded.code_example, real_world_example = excluded.real_world_example, follow_ups = excluded.follow_ups, related_concepts = excluded.related_concepts, key_points = excluded.key_points, day_numbers = excluded.day_numbers;`,
+    );
+  }
+}
+
+/** Milestone positions continue across files so the projects page keeps one ordering. */
+function emitMilestones(out: string[], list: MilestoneSpec[], firstPosition: number) {
+  list.forEach((m, i) => {
+    const tasks = m.tasks.map((title, j) => ({ id: `${m.slug}-${j + 1}`, title }));
+    out.push(
+      `insert into public.project_milestones (id, slug, position, title, description, target_day, tasks) values (` +
+        [q(stableUuid(`m:${m.slug}`)), q(m.slug), firstPosition + i, q(m.title), q(m.description), m.targetDay, json(tasks)].join(", ") +
+        `) on conflict (slug) do update set position = excluded.position, title = excluded.title, description = excluded.description, target_day = excluded.target_day, tasks = excluded.tasks;`,
+    );
+  });
+}
+
+function write(file: string, out: string[]) {
+  out.push("commit;", "");
+  const target = join(__dirname, "..", "supabase", "migrations", file);
+  writeFileSync(target, out.join("\n"));
+  return target;
+}
+
+// ── 003: core 60-day sprint ──────────────────────────────────────────────────
+const core: string[] = [
   "-- GENERATED by scripts/generate-seed.ts — do not edit by hand.",
   "-- Shared content: 60-day curriculum, interview questions, coding challenges, system design, milestones.",
   "begin;",
 ];
-
-let dayIndex = 0;
-for (const phase of phases) {
-  for (const d of phase.days) {
-    dayIndex += 1;
-    if (d.day !== dayIndex) throw new Error(`Day numbering gap at ${d.day}`);
-    const dayId = stableUuid(`day:${d.day}`);
-    const morningFocus = d.topics.slice(0, 3).join(", ") + (d.topics.length > 3 ? " …" : "");
-    const eveningFocus = d.assignments[0] ?? "Practice and interview questions";
-    out.push(
-      `insert into public.curriculum_days (id, day_number, week_number, phase_number, phase_title, title, skill_area, morning_focus, evening_focus, topics, objectives, interview_questions, coding_assignments, practical_outcomes, is_mock_interview, is_revision) values (` +
-        [q(dayId), d.day, Math.ceil(d.day / 7), phase.number, q(phase.title), q(d.title), q(d.skill), q(morningFocus), q(eveningFocus),
-          arr(d.topics), arr(d.objectives), arr(d.questions), arr(d.assignments), arr(d.outcomes), d.mock ? "true" : "false", d.revision ? "true" : "false"].join(", ") +
-        `) on conflict (day_number) do update set week_number = excluded.week_number, phase_number = excluded.phase_number, phase_title = excluded.phase_title, title = excluded.title, skill_area = excluded.skill_area, morning_focus = excluded.morning_focus, evening_focus = excluded.evening_focus, topics = excluded.topics, objectives = excluded.objectives, interview_questions = excluded.interview_questions, coding_assignments = excluded.coding_assignments, practical_outcomes = excluded.practical_outcomes, is_mock_interview = excluded.is_mock_interview, is_revision = excluded.is_revision;`,
-    );
-    const tasks = generateTasks(d);
-    const total = tasks.reduce((s, t) => s + t.minutes, 0);
-    if (total !== 240) throw new Error(`Day ${d.day} totals ${total} minutes, expected 240`);
-    for (const t of tasks) {
-      out.push(
-        `insert into public.curriculum_tasks (id, day_id, day_number, session, position, title, description, task_type, estimated_minutes, priority, is_required, skill_area) values (` +
-          [q(stableUuid(`task:${d.day}:${t.session}:${t.position}`)), `(select id from public.curriculum_days where day_number = ${d.day})`, d.day, q(t.session), t.position, q(t.title), q(t.description), q(t.taskType), t.minutes, q(t.priority), t.required ? "true" : "false", q(t.skill)].join(", ") +
-          `) on conflict (id) do update set title = excluded.title, description = excluded.description, task_type = excluded.task_type, estimated_minutes = excluded.estimated_minutes, priority = excluded.priority, is_required = excluded.is_required, skill_area = excluded.skill_area;`,
-      );
-    }
-    // Remove tasks that no longer exist in the generator for this day
-    const keep = tasks.map((t) => q(stableUuid(`task:${d.day}:${t.session}:${t.position}`))).join(",");
-    out.push(`delete from public.curriculum_tasks where day_number = ${d.day} and id not in (${keep});`);
-    void dayId;
-  }
-}
-if (dayIndex !== 60) throw new Error(`Expected 60 days, got ${dayIndex}`);
-
-for (const x of questions) {
-  out.push(
-    `insert into public.interview_questions (id, slug, category, skill_area, difficulty, title, short_answer, explanation, code_example, real_world_example, follow_ups, related_concepts, key_points, day_numbers) values (` +
-      [q(stableUuid(`q:${x.slug}`)), q(x.slug), q(x.category), q(x.skill), q(x.difficulty), q(x.title), q(x.short), q(x.explanation), q(x.code), q(x.realWorld), arr(x.followUps), arr(x.related), arr(x.keyPoints), arr(x.days)].join(", ") +
-      `) on conflict (slug) do update set category = excluded.category, skill_area = excluded.skill_area, difficulty = excluded.difficulty, title = excluded.title, short_answer = excluded.short_answer, explanation = excluded.explanation, code_example = excluded.code_example, real_world_example = excluded.real_world_example, follow_ups = excluded.follow_ups, related_concepts = excluded.related_concepts, key_points = excluded.key_points, day_numbers = excluded.day_numbers;`,
-  );
-}
+const lastCore = emitDays(core, phases, 1);
+if (lastCore !== 60) throw new Error(`Expected 60 days, got ${lastCore}`);
+emitQuestions(core, questions);
 
 for (const c of challenges) {
-  out.push(
+  core.push(
     `insert into public.coding_challenges (id, slug, category, skill_area, difficulty, title, description, example_input, expected_output, hints, solution_explanation, solution_code, time_complexity, space_complexity) values (` +
       [q(stableUuid(`c:${c.slug}`)), q(c.slug), q(c.category), q(c.skill), q(c.difficulty), q(c.title), q(c.description), q(c.input), q(c.output), arr(c.hints), q(c.explanation), q(c.code), q(c.time), q(c.space)].join(", ") +
       `) on conflict (slug) do update set category = excluded.category, skill_area = excluded.skill_area, difficulty = excluded.difficulty, title = excluded.title, description = excluded.description, example_input = excluded.example_input, expected_output = excluded.expected_output, hints = excluded.hints, solution_explanation = excluded.solution_explanation, solution_code = excluded.solution_code, time_complexity = excluded.time_complexity, space_complexity = excluded.space_complexity;`,
@@ -84,23 +116,26 @@ for (const c of challenges) {
 }
 
 designs.forEach((s, i) => {
-  out.push(
+  core.push(
     `insert into public.system_design_exercises (id, slug, position, title, summary, functional_requirements, non_functional_requirements, api_design, database_schema, architecture, scaling, caching, security, failure_handling, tradeoffs, key_points) values (` +
       [q(stableUuid(`sd:${s.slug}`)), q(s.slug), i + 1, q(s.title), q(s.summary), arr(s.functional), arr(s.nonFunctional), q(s.api), q(s.schema), json(s.architecture), arr(s.scaling), arr(s.caching), arr(s.security), arr(s.failure), arr(s.tradeoffs), arr(s.keyPoints)].join(", ") +
       `) on conflict (slug) do update set position = excluded.position, title = excluded.title, summary = excluded.summary, functional_requirements = excluded.functional_requirements, non_functional_requirements = excluded.non_functional_requirements, api_design = excluded.api_design, database_schema = excluded.database_schema, architecture = excluded.architecture, scaling = excluded.scaling, caching = excluded.caching, security = excluded.security, failure_handling = excluded.failure_handling, tradeoffs = excluded.tradeoffs, key_points = excluded.key_points;`,
   );
 });
 
-milestones.forEach((m, i) => {
-  const tasks = m.tasks.map((title, j) => ({ id: `${m.slug}-${j + 1}`, title }));
-  out.push(
-    `insert into public.project_milestones (id, slug, position, title, description, target_day, tasks) values (` +
-      [q(stableUuid(`m:${m.slug}`)), q(m.slug), i + 1, q(m.title), q(m.description), m.targetDay, json(tasks)].join(", ") +
-      `) on conflict (slug) do update set position = excluded.position, title = excluded.title, description = excluded.description, target_day = excluded.target_day, tasks = excluded.tasks;`,
-  );
-});
+emitMilestones(core, milestones, 1);
+const coreFile = write("003_content.sql", core);
+console.log(`Wrote ${coreFile}: 60 days, ${questions.length} questions, ${challenges.length} challenges, ${designs.length} designs, ${milestones.length} milestones`);
 
-out.push("commit;", "");
-const target = join(__dirname, "..", "supabase", "migrations", "003_content.sql");
-writeFileSync(target, out.join("\n"));
-console.log(`Wrote ${target}: 60 days, ${questions.length} questions, ${challenges.length} challenges, ${designs.length} designs, ${milestones.length} milestones`);
+// ── 005: AI Engineering course ───────────────────────────────────────────────
+const ai: string[] = [
+  "-- GENERATED by scripts/generate-seed.ts — do not edit by hand.",
+  "-- AI Engineering course: days 61–90, AI interview questions, AI project milestones. Requires 004.",
+  "begin;",
+];
+const lastAi = emitDays(ai, aiPhases, 61);
+if (lastAi !== 90) throw new Error(`Expected AI course to end at day 90, got ${lastAi}`);
+emitQuestions(ai, aiQuestions);
+emitMilestones(ai, aiMilestones, milestones.length + 1);
+const aiFile = write("005_ai_course_content.sql", ai);
+console.log(`Wrote ${aiFile}: ${lastAi - 60} days, ${aiQuestions.length} questions, ${aiMilestones.length} milestones`);

@@ -52,7 +52,7 @@ export function StudyTimer({ active, serverNow, subjects, dayNumber, defaultSlot
   }, [session?.status, skew]);
 
   useEffect(() => {
-    document.title = session?.status === "running" ? `${formatClock(remaining ?? elapsed)} · DevSprint 60` : "DevSprint 60";
+    document.title = session?.status === "running" ? `${formatClock(remaining ?? elapsed)} · DevSprint` : "DevSprint";
   }, [session?.status, elapsed, remaining]);
 
   // Keep every open device in sync.

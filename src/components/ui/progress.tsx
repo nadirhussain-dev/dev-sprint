@@ -9,9 +9,9 @@ export function Progress({ value, className, label }: { value: number; className
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={cn("h-1.5 w-full overflow-hidden rounded-full bg-muted", className)}
+      className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}
     >
-      <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${v}%` }} />
+      <div className="h-full rounded-full bg-energy transition-[width] duration-500" style={{ width: `${v}%` }} />
     </div>
   );
 }

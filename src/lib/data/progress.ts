@@ -1,5 +1,5 @@
 import "server-only";
-import { addDays, type ISODate } from "@/lib/domain/dates";
+import { addDays, type ISODate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { computeStreaks, type StreakSummary } from "@/lib/domain/streaks";
 import { rows, one } from "@/lib/supabase/result";
 import type { AppContext } from "./context";
@@ -143,7 +143,7 @@ export async function getRevisionDue(ctx: Ctx): Promise<{ due: RevisionItem[]; u
   return { due: items.filter((i) => i.due_date <= ctx.today), upcoming: items.filter((i) => i.due_date > ctx.today) };
 }
 
-/** Per-day completion % for all 60 days (roadmap, calendar, analytics). */
+/** Per-day completion % for every plan day (roadmap, calendar, analytics). */
 export async function getAllDayCompletion(ctx: Ctx): Promise<Map<number, { requiredTotal: number; requiredDone: number; anyActivity: boolean }>> {
   const [tasks, progress] = await Promise.all([
     ctx.supabase.from("curriculum_tasks").select("id, day_number, is_required").then(rows<{ id: string; day_number: number; is_required: boolean }>),
@@ -151,7 +151,7 @@ export async function getAllDayCompletion(ctx: Ctx): Promise<Map<number, { requi
   ]);
   const status = new Map(progress.filter((p) => p.task_id).map((p) => [p.task_id as string, p.status]));
   const out = new Map<number, { requiredTotal: number; requiredDone: number; anyActivity: boolean }>();
-  for (let d = 1; d <= 60; d++) out.set(d, { requiredTotal: 0, requiredDone: 0, anyActivity: false });
+  for (let d = 1; d <= PLAN_LENGTH; d++) out.set(d, { requiredTotal: 0, requiredDone: 0, anyActivity: false });
   for (const t of tasks) {
     const e = out.get(t.day_number)!;
     const s = status.get(t.id);

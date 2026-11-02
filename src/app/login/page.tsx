@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
         <Link href="/" className="mb-6 flex items-center gap-2"><Logo /></Link>
-        <h1 className="text-lg font-semibold tracking-tight">Sign in to DevSprint 60</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Sign in to DevSprint</h1>
         <p className="mb-5 mt-1 text-sm text-muted-foreground">Enter your email to continue your sprint.</p>
         <LoginForm initialError={error ? ERRORS[error] : undefined} />
       </div>

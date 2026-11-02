@@ -103,6 +103,6 @@ export function InstallApp() {
     return () => { window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); };
   }, []);
   if (installed) return <p className="flex items-center gap-1.5 text-sm text-success"><CheckCircle2 className="h-4 w-4" />Running as an installed app</p>;
-  if (evt) return <Button onClick={async () => { await evt.prompt(); const c = await evt.userChoice; if (c.outcome === "accepted") setInstalled(true); setEvt(null); }}><Download />Install DevSprint 60</Button>;
+  if (evt) return <Button onClick={async () => { await evt.prompt(); const c = await evt.userChoice; if (c.outcome === "accepted") setInstalled(true); setEvt(null); }}><Download />Install DevSprint</Button>;
   return <p className="text-sm text-muted-foreground">To install: use your browser&apos;s “Install app” / “Add to Home Screen” option (Safari: Share → Add to Home Screen).</p>;
 }

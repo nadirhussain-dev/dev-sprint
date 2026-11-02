@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isISODate, isValidTimezone } from "@/lib/domain/dates";
+import { isISODate, isValidTimezone, PLAN_LENGTH } from "@/lib/domain/dates";
 
 const time = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Use HH:MM").transform((t) => t.slice(0, 5));
 const minutes = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
@@ -49,7 +49,7 @@ export const TaskDetailsSchema = z.object({
 });
 
 export const CustomTaskSchema = z.object({
-  day_number: z.coerce.number().int().min(1).max(60),
+  day_number: z.coerce.number().int().min(1).max(PLAN_LENGTH),
   title: z.string().trim().min(2).max(160),
   minutes: z.coerce.number().int().min(5).max(480),
   session: z.enum(["morning", "evening"]),
@@ -66,10 +66,10 @@ export const EvidenceSchema = z.object({
 
 export const AttemptSchema = z.object({
   kind: z.enum(["simulator", "mock_interview", "system_design"]),
-  skill_area: z.enum(["javascript_typescript", "react_next", "backend", "databases", "oop_solid", "dsa", "system_design", "project", "communication"]),
+  skill_area: z.enum(["javascript_typescript", "react_next", "backend", "databases", "oop_solid", "dsa", "system_design", "project", "communication", "ai_engineering"]),
   question_id: z.uuid().optional(),
   exercise_id: z.uuid().optional(),
-  day_number: z.coerce.number().int().min(1).max(60).optional(),
+  day_number: z.coerce.number().int().min(1).max(PLAN_LENGTH).optional(),
   answer: z.string().max(10000).optional(),
   key_points_total: z.number().int().min(0).max(30),
   key_points_covered: z.number().int().min(0).max(30),

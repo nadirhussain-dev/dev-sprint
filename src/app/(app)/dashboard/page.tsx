@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Clock, Flame, ListTodo, Mic, RotateCcw, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Clock, FastForward, Flame, History, ListTodo, Mic, RotateCcw, Sparkles, Trophy } from "lucide-react";
 import { getAppContext } from "@/lib/data/context";
-import { dayTaskStats, getDay, getDayExtras, getOverallProgress, getRevisionDue, getStreaks, getStudyTotals } from "@/lib/data/progress";
+import { dayTaskStats, getAllDayCompletion, getDay, getDayExtras, getOverallProgress, getRevisionDue, getStreaks, getStudyTotals } from "@/lib/data/progress";
 import { rows } from "@/lib/supabase/result";
-import { addDays, formatShortDate, greeting } from "@/lib/domain/dates";
+import { addDays, formatShortDate, greeting, PLAN_LENGTH } from "@/lib/domain/dates";
 import { motivationalMessage } from "@/lib/domain/motivation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   const { position } = ctx;
   const todayNumber = position.dayNumber;
 
-  const [streaks, overall, study, revision, bundle, upcomingDays, milestones] = await Promise.all([
+  const [streaks, overall, study, revision, bundle, upcomingDays, milestones, completion] = await Promise.all([
     getStreaks(ctx),
     getOverallProgress(ctx),
     getStudyTotals(ctx),
@@ -33,7 +33,17 @@ export default async function DashboardPage() {
     position.phase === "finished" ? Promise.resolve(null) : getDay(ctx, todayNumber),
     ctx.supabase.from("curriculum_days").select("*").gt("day_number", position.phase === "not_started" ? 0 : todayNumber).order("day_number").limit(position.phase === "not_started" ? 4 : 3).then(rows<CurriculumDay>),
     ctx.supabase.from("project_milestones").select("*").gte("target_day", todayNumber).order("target_day").limit(3).then(rows<Milestone>),
+    getAllDayCompletion(ctx),
   ]);
+  // Earlier days with required work left — any day can be completed later, and future days can be done in advance.
+  const lastPastDay = position.phase === "finished" ? PLAN_LENGTH : position.phase === "active" ? todayNumber - 1 : 0;
+  const catchUp = [...completion.entries()]
+    .filter(([d, c]) => d <= lastPastDay && c.requiredTotal > 0 && c.requiredDone < c.requiredTotal)
+    .map(([d, c]) => ({ day: d, left: c.requiredTotal - c.requiredDone, started: c.requiredDone > 0 || c.anyActivity }));
+  const catchUpTitles = new Map(
+    rows<{ day_number: number; title: string }>(await ctx.supabase.from("curriculum_days").select("day_number, title").in("day_number", catchUp.slice(0, 5).map((c) => c.day))).map((d) => [d.day_number, d.title]),
+  );
+  const nextAheadDay = position.phase === "not_started" ? 1 : position.phase === "active" && todayNumber < PLAN_LENGTH ? todayNumber + 1 : null;
   const [mockDays, extras] = await Promise.all([
     ctx.supabase.from("curriculum_days").select("day_number, title").eq("is_mock_interview", true).gte("day_number", todayNumber).order("day_number").limit(3).then(rows<{ day_number: number; title: string }>),
     bundle ? getDayExtras(ctx, todayNumber, bundle.tasks.map((t) => t.id)) : Promise.resolve({ notes: [], evidence: [] }),
@@ -54,12 +64,31 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Welcome */}
-      <section className="flex flex-col gap-1">
-        <p className="font-mono text-xs text-muted-foreground">
-          {position.phase === "active" ? `DAY ${todayNumber} OF 60 · WEEK ${Math.ceil(todayNumber / 7)}` : position.phase === "not_started" ? `STARTS ${formatShortDate(ctx.plan.start_date).toUpperCase()}` : "SPRINT COMPLETE"}
+      <section className="bg-hero shadow-energy relative overflow-hidden rounded-2xl p-5 text-white sm:p-6">
+        <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-green-400/15 blur-2xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-lime-300/15 blur-2xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+        <p className="font-mono text-xs text-lime-300">
+          {position.phase === "active" ? `DAY ${todayNumber} OF ${PLAN_LENGTH} · WEEK ${Math.ceil(todayNumber / 7)}` : position.phase === "not_started" ? `STARTS ${formatShortDate(ctx.plan.start_date).toUpperCase()}` : "SPRINT COMPLETE"}
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight">{greeting(ctx.hour)}, {firstName}.</h1>
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{greeting(ctx.hour)}, {firstName}! <Sparkles className="inline h-6 w-6 align-[-2px]" aria-hidden /></h1>
+        <p className="max-w-xl text-sm text-white/90">{message}</p>
+          </div>
+          <div className="flex items-center gap-3 self-start rounded-xl border border-green-400/30 bg-white/5 px-4 py-3 backdrop-blur sm:self-auto">
+            <Flame className={`h-8 w-8 ${s.current > 0 ? "animate-flicker fill-lime-300 text-green-300" : "text-white/70"}`} aria-hidden />
+            <div>
+              <p className="text-2xl font-bold leading-none tabular-nums">{s.current}</p>
+              <p className="text-[11px] text-white/85">day streak</p>
+            </div>
+          </div>
+        </div>
+        {position.phase === "active" || position.phase === "not_started" ? (
+          <div className="relative mt-4 flex flex-wrap gap-2">
+            {bundle ? <Button asChild size="sm"><Link href={`/roadmap/day/${bundle.day.day_number}`}>{position.phase === "active" ? "Start today" : "Preview Day 1"} <ArrowRight /></Link></Button> : null}
+            {nextAheadDay && position.phase === "active" ? <Button asChild size="sm" variant="ghost" className="text-green-200 hover:bg-white/10 hover:text-white"><Link href={`/roadmap/day/${nextAheadDay}`}><FastForward />Work ahead: Day {nextAheadDay}</Link></Button> : null}
+          </div>
+        ) : null}
       </section>
 
       {/* Accountability banner */}
@@ -92,7 +121,7 @@ export default async function DashboardPage() {
         <div className="flex min-w-0 flex-col gap-6">
           {/* Today's learning */}
           {position.phase === "finished" ? (
-            <Card><CardContent className="pt-5"><EmptyState icon={Trophy} title="You completed the 60-day sprint" description="Review your readiness report and plan what's next." action={<Button asChild size="sm" className="mt-2"><Link href="/analytics">Open readiness report</Link></Button>} /></CardContent></Card>
+            <Card><CardContent className="pt-5"><EmptyState icon={Trophy} title={`You completed all ${PLAN_LENGTH} days`} description="Review your readiness report and plan what's next." action={<Button asChild size="sm" className="mt-2"><Link href="/analytics">Open readiness report</Link></Button>} /></CardContent></Card>
           ) : bundle ? (
             <Card>
               <CardHeader>
@@ -133,6 +162,22 @@ export default async function DashboardPage() {
 
         {/* Right panel */}
         <aside className="flex flex-col gap-4">
+          {catchUp.length ? (
+            <Card className="border-primary/30">
+              <CardHeader className="flex-row items-center justify-between"><CardTitle className="flex items-center gap-2"><History className="h-4 w-4 text-primary" />Catch up</CardTitle><Badge variant="warning">{catchUp.length} day{catchUp.length === 1 ? "" : "s"}</Badge></CardHeader>
+              <CardContent className="flex flex-col gap-1">
+                <p className="mb-1 text-xs text-muted-foreground">Unfinished earlier days. You can complete them any time; it all counts toward your progress.</p>
+                {catchUp.slice(0, 5).map((c) => (
+                  <Link key={c.day} href={`/roadmap/day/${c.day}`} className="flex items-center justify-between gap-2 rounded-md px-1 py-1 text-sm hover:bg-accent">
+                    <span className="truncate"><span className="font-mono text-[11px] text-muted-foreground">Day {c.day}</span> · {catchUpTitles.get(c.day) ?? ""}</span>
+                    <span className="shrink-0 text-[11px] text-primary">{c.left} left</span>
+                  </Link>
+                ))}
+                {catchUp.length > 5 ? <Button asChild variant="outline" size="sm" className="mt-2"><Link href="/roadmap">See all on the roadmap</Link></Button> : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
           <StudyTimer
             active={study.activeTimer}
             serverNow={Date.now()}

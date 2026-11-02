@@ -7,7 +7,8 @@ export type SkillArea =
   | "dsa"
   | "system_design"
   | "project"
-  | "communication";
+  | "communication"
+  | "ai_engineering";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 

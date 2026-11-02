@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, BookOpenCheck, Code2, Info, Mic, Target } from "
 import { getAppContext } from "@/lib/data/context";
 import { dayTaskStats, getDay, getDayExtras, getStreaks } from "@/lib/data/progress";
 import { rows } from "@/lib/supabase/result";
-import { formatLongDate } from "@/lib/domain/dates";
+import { formatLongDate, PLAN_LENGTH } from "@/lib/domain/dates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ day: stri
 export default async function DayPage({ params }: { params: Promise<{ day: string }> }) {
   const { day } = await params;
   const n = Number(day);
-  if (!Number.isInteger(n) || n < 1 || n > 60) notFound();
+  if (!Number.isInteger(n) || n < 1 || n > PLAN_LENGTH) notFound();
 
   const ctx = await getAppContext();
   const [bundle, streaks, related] = await Promise.all([
@@ -35,7 +35,7 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
   const extras = await getDayExtras(ctx, n, bundle.tasks.map((t) => t.id));
   const stats = dayTaskStats(bundle);
   const d = bundle.day;
-  const today = ctx.position.phase === "active" ? ctx.position.dayNumber : ctx.position.phase === "finished" ? 61 : 0;
+  const today = ctx.position.phase === "active" ? ctx.position.dayNumber : ctx.position.phase === "finished" ? PLAN_LENGTH + 1 : 0;
   const relation = n === today ? "today" : n < today ? "past" : "future";
 
   return (
@@ -44,7 +44,7 @@ export default async function DayPage({ params }: { params: Promise<{ day: strin
         <Link href="/roadmap" className="text-muted-foreground hover:text-foreground">← Roadmap</Link>
         <div className="flex gap-1">
           <Button asChild variant="outline" size="icon" aria-label="Previous day" className={n === 1 ? "pointer-events-none opacity-40" : ""}><Link href={`/roadmap/day/${n - 1}`}><ArrowLeft /></Link></Button>
-          <Button asChild variant="outline" size="icon" aria-label="Next day" className={n === 60 ? "pointer-events-none opacity-40" : ""}><Link href={`/roadmap/day/${n + 1}`}><ArrowRight /></Link></Button>
+          <Button asChild variant="outline" size="icon" aria-label="Next day" className={n === PLAN_LENGTH ? "pointer-events-none opacity-40" : ""}><Link href={`/roadmap/day/${n + 1}`}><ArrowRight /></Link></Button>
         </div>
       </nav>
 

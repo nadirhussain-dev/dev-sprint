@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAppContext } from "@/lib/data/context";
+import { PLAN_LENGTH } from "@/lib/domain/dates";
 import type { ActionResult, StudySession } from "@/lib/types";
 
 const StartSchema = z.object({
@@ -9,7 +10,7 @@ const StartSchema = z.object({
   slot: z.enum(["morning", "evening"]),
   mode: z.enum(["stopwatch", "countdown"]),
   targetMinutes: z.number().int().min(1).max(300).optional(),
-  dayNumber: z.number().int().min(1).max(60).nullable(),
+  dayNumber: z.number().int().min(1).max(PLAN_LENGTH).nullable(),
 });
 
 function refresh() {
@@ -65,7 +66,7 @@ const ManualSchema = z.object({
   minutes: z.number().int().min(1).max(480),
   subject: z.string().trim().min(1).max(120),
   slot: z.enum(["morning", "evening"]),
-  dayNumber: z.number().int().min(1).max(60).nullable(),
+  dayNumber: z.number().int().min(1).max(PLAN_LENGTH).nullable(),
   confirmed: z.literal(true, "Please confirm the entry"),
 });
 

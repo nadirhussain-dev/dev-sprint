@@ -11,7 +11,7 @@ function level(d: HeatDay | undefined, target: number): number {
   return 1;
 }
 
-/** GitHub-style contribution grid over the 60-day plan (weeks as columns, Sun→Sat rows). */
+/** GitHub-style contribution grid over the whole plan (weeks as columns, Sun→Sat rows). */
 export function Heatmap({ start, end, today, days, targetMinutes }: { start: ISODate; end: ISODate; today: ISODate; days: HeatDay[]; targetMinutes: number }) {
   const map = new Map(days.map((d) => [d.local_date, d]));
   const startDow = new Date(`${start}T12:00:00Z`).getUTCDay();
@@ -41,7 +41,7 @@ export function Heatmap({ start, end, today, days, targetMinutes }: { start: ISO
                   role="gridcell"
                   title={title}
                   aria-label={title || undefined}
-                  className={`h-3.5 w-3.5 rounded-[3px] ${!inPlan ? "opacity-0" : future ? "border border-dashed border-border" : ""} ${date === today ? "ring-1 ring-foreground ring-offset-1 ring-offset-background" : ""}`}
+                  className={`h-3.5 w-3.5 rounded-[3px] ${!inPlan ? "opacity-0" : future ? "border border-dashed border-border" : ""} ${date === today ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
                   style={inPlan && !future ? { background: `var(--heat-${lvl})` } : undefined}
                 />
               );

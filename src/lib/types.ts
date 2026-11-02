@@ -150,6 +150,7 @@ export const SKILL_LABELS: Record<SkillArea, string> = {
   system_design: "System Design",
   project: "Project",
   communication: "Communication",
+  ai_engineering: "AI Engineering",
 };
 
 export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string } | { ok: false; error: string };
